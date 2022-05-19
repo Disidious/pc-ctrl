@@ -1,25 +1,39 @@
+import styles from './styles.js'
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect } from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Image, Modal, TextInput, BackHandler } from 'react-native';
-import {Dimensions} from 'react-native';
+import { Text, View, TouchableOpacity, Image, Modal, TextInput, BackHandler, Dimensions } from 'react-native';
 import {MaterialCommunityIcons} from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { io } from "socket.io-client";
 import * as ScreenOrientation from 'expo-screen-orientation';
 
 const { height, width } = Dimensions.get('window');
 
+const port = ":9876"
 var url = ""
-var port = ":9876"
+var socketUrl = ""
 var socket = null
 
+const touchPadDelay = 55
 var lastTouchPadReq = null
-var touchPadDelay = 90
 
-function socketConn() {
+function socketConn(setErr, goBack) {
   socketClose()
-
-  socket = io(url);
+  socket = new WebSocket(socketUrl + '/touchpad');
+  socket.onopen = function () {
+    let width = Math.max(Dimensions.get('window').height, Dimensions.get('window').width)
+    let height = Math.min(Dimensions.get('window').height, Dimensions.get('window').width)
+    try {
+      socket.send('ACTIVATED;' + width + ';' + height)
+      setErr('')
+    } catch(e) {
+      setErr("Couldn't Reach Host")
+      goBack()
+    }
+  }
+  socket.onerror = function () {
+    setErr("Couldn't Reach Host")
+    goBack()
+  }
 }
 
 function socketClose() {
@@ -30,26 +44,42 @@ function socketClose() {
 
 function setUrl(ip) {
   url = "http://" + ip + port
+  socketUrl = "ws://" + ip + port
 }
 
-function back() {
-  fetch(url + "/back")
+function back(setErr) {
+  setErr('')
+  fetch(url + "/backward").catch((e) => {
+    setErr("Couldn't Reach Host")
+  })
 }
 
-function pauseplay() {
-  fetch(url + "/pauseplay")
+function playpause(setErr) {
+  setErr('')
+  fetch(url + "/playpause").catch((e) => {
+    setErr("Couldn't Reach Host")
+  })
 }
 
-function forward() {
-  fetch(url + "/forward")
+function forward(setErr) {
+  setErr('')
+  fetch(url + "/forward").catch((e) => {
+    setErr("Couldn't Reach Host")
+  })
 }
 
-function screen() {
-  fetch(url + "/screen")
+function fullScreen(setErr) {
+  setErr('')
+  fetch(url + "/fullscreen").catch((e) => {
+    setErr("Couldn't Reach Host")
+  })
 }
 
-function shakeCursor() {
-  fetch(url + "/shakeCursor")
+function shakeCursor(setErr) {
+  setErr('')
+  fetch(url + "/shakecursor").catch((e) => {
+    setErr("Couldn't Reach Host")
+  })
 }
 
 export default function App() {
@@ -57,6 +87,7 @@ export default function App() {
   const [inputIp, setInputIp] = useState('')
   const [ip, setIp] = useState('')
   const [touchPadVisible, setTouchPadVisible] = useState(false)
+  const [err, setErr] = useState('')
   
   const touchPadBackAction = () => {
     if(touchPadVisible) {
@@ -88,7 +119,7 @@ export default function App() {
 
   useEffect(() => {
     if(touchPadVisible){
-      socketConn()
+      socketConn(setErr, touchPadBackAction)
     }
     else{
       socketClose()
@@ -112,30 +143,45 @@ export default function App() {
           <MaterialCommunityIcons
             name="cursor-default-click" 
             size={100}
-            style={{position: 'absolute', justifyContent: 'center', alignSelf: 'center', top: Dimensions.get('window').width/2 - 50, color: 'rgb(0,0,0)'}} 
+            style={{
+              position: 'absolute', 
+              justifyContent: 'center', 
+              alignSelf: 'center', 
+              top: Math.min(Dimensions.get('window').height, Dimensions.get('window').width)/2 - 50, 
+              color: 'rgb(0,0,0)'}} 
           >
             Touch Pad
           </MaterialCommunityIcons>
           <View 
             style={{height: "100%", backgroundColor: 'rgba(255,255,255,0.8)'}}
             onTouchStart={(e)=>{
-              socket.emit('touchStart', {x: e.nativeEvent.locationX, y: e.nativeEvent.locationY})
+              try {
+                socket.send('START;' + e.nativeEvent.locationX + ';' + e.nativeEvent.locationY);
+              } catch(e) {
+                setErr("Couldn't Reach Host")
+                touchPadBackAction()
+              }
             }}
             onTouchMove={(e)=>{
-              if(lastTouchPadReq != null && Date.now() - lastTouchPadReq < touchPadDelay) {
-                return
-              }
-              lastTouchPadReq = Date.now()
-              let padHeight = Dimensions.get('window').height
-              let padWidth = Dimensions.get('window').width
-              socket.emit(
-                'touchCoords', 
-                {x: e.nativeEvent.locationX, y: e.nativeEvent.locationY, width: padWidth, height: padHeight}
-                );
+                if(lastTouchPadReq != null && Date.now() - lastTouchPadReq < touchPadDelay) {
+                  return
+                }
+                lastTouchPadReq = Date.now()
+                try {
+                  socket.send('MOVING;' + e.nativeEvent.touches[0].locationX + ';' + e.nativeEvent.touches[0].locationY);
+                } catch(e) {
+                  setErr("Couldn't Reach Host")
+                touchPadBackAction()
+                }
               }
             }
             onTouchEnd={(e)=>{
-              socket.emit('touchEnd', {x: e.nativeEvent.locationX, y: e.nativeEvent.locationY})
+              try {
+                socket.send('END;' + e.nativeEvent.locationX + ';' + e.nativeEvent.locationY);
+              } catch(e) {
+                setErr("Couldn't Reach Host")
+                touchPadBackAction()
+              }
             }}
           />
         </View>
@@ -189,7 +235,7 @@ export default function App() {
       Upper Buttons View 
       ===================================================================================================
       */}
-      <View style={{flexDirection: 'row', justifyContent: 'flex-end', height: height * 0.15, marginTop: height * 0.01}}>
+      <View style={styles.upperContainer}>
         <TouchableOpacity onPress={()=>{
             setTouchPadVisible(true)
             ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT)
@@ -223,21 +269,21 @@ export default function App() {
           Media{"\n"}CTRL
         </Text>
         <View style={styles.mediaBtnContainer}>
-          <TouchableOpacity onPress={back}>
+          <TouchableOpacity onPress={()=>back(setErr)}>
             <MaterialCommunityIcons
               name="step-backward" 
               size={40}
               style={styles.mediaBtn} 
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={pauseplay}>
+          <TouchableOpacity onPress={()=>playpause(setErr)}>
             <MaterialCommunityIcons
               name="play-pause" 
               size={60}
               style={styles.mediaBtn} 
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={forward}>
+          <TouchableOpacity onPress={()=>forward(setErr)}>
             <MaterialCommunityIcons
               name="step-forward" 
               size={40}
@@ -249,14 +295,14 @@ export default function App() {
         <View style={styles.divider}/>
 
         <View style={styles.mediaBtnContainer}>
-          <TouchableOpacity onPress={screen}>
+          <TouchableOpacity onPress={()=>fullScreen(setErr)}>
             <MaterialCommunityIcons
               name="fit-to-screen" 
               size={40}
               style={styles.mediaBtn} 
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={shakeCursor}>
+          <TouchableOpacity onPress={()=>shakeCursor(setErr)}>
             <MaterialCommunityIcons
               name="mouse-move-vertical" 
               size={40}
@@ -264,92 +310,10 @@ export default function App() {
             />
           </TouchableOpacity>
         </View>
+        <Text style={{color: "red", fontWeight: "bold", marginTop: 10, fontSize: 20}}>{err}</Text>
         <StatusBar style="light" hidden={touchPadVisible}/>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  settingsBtn: {
-    backgroundColor: "white",
-    margin: 10,
-    color: "black", 
-    padding: 10, 
-    borderRadius: 100,
-    alignSelf: 'flex-end',
-    top: 25,
-    right: 5,
-  },
-
-  ipModal: {
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-  },
-  ipView: {
-    backgroundColor: "black", 
-    width: "100%", 
-    height: 200,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  ipInput: {
-    width: "90%",
-    height: 40,
-    margin: 12,
-    borderWidth: 1,
-    padding: 10,
-    color: "black",
-    backgroundColor: "white",
-    borderRadius: 100
-  },
-
-  logo: {
-    width: 150,
-    height: 150,
-    marginBottom: 30,
-    resizeMode: 'stretch'
-  },
-
-  divider: {
-    borderBottomColor: 'white',
-    borderBottomWidth: 1,
-    alignSelf: 'stretch',
-    width: '70%',
-    alignSelf: 'center',
-    margin: 10
-  },
-
-  wrapper: {
-    flex: 1,
-    backgroundColor: 'black'
-  },
-
-  container: {
-    top: 0,
-    alignItems: 'center',
-    flex: 1,
-  },
-
-  title: {
-    fontSize: 30,
-    fontWeight: "bold",
-    color: "white",
-    marginBottom: 50,
-    textAlign: 'center'
-  },
-
-  mediaBtnContainer: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-
-  mediaBtn: {
-    backgroundColor: "white",
-    margin: 10,
-    color: "black", 
-    padding: 10, 
-    borderRadius: 100
-  }
-});
