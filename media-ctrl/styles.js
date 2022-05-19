@@ -73,7 +73,7 @@ import { StyleSheet, Dimensions } from 'react-native'
     fontSize: 30,
     fontWeight: "bold",
     color: "white",
-    marginBottom: 50,
+    marginBottom: 40,
     textAlign: 'center'
   },
 

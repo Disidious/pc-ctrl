@@ -82,11 +82,30 @@ function shakeCursor(setErr) {
   })
 }
 
+function volUp(setErr, setTimer) {
+  setErr('')
+  fetch(url + "/volup").catch((e) => {
+    setErr("Couldn't Reach Host")
+  })
+
+  setTimer(setTimeout(()=>volUp(setErr, setTimer), 50))
+}
+
+function volDown(setErr, setTimer) {
+  setErr('')
+  fetch(url + "/voldown").catch((e) => {
+    setErr("Couldn't Reach Host")
+  })
+
+  setTimer(setTimeout(()=>volDown(setErr, setTimer), 50))
+}
+
 export default function App() {
   const [modalVisible, setModalVisible] = useState(false);
   const [inputIp, setInputIp] = useState('')
   const [ip, setIp] = useState('')
   const [touchPadVisible, setTouchPadVisible] = useState(false)
+  const [volumeTimer, setVolumeTimer] = useState(null)
   const [err, setErr] = useState('')
   
   const touchPadBackAction = () => {
@@ -305,6 +324,26 @@ export default function App() {
           <TouchableOpacity onPress={()=>shakeCursor(setErr)}>
             <MaterialCommunityIcons
               name="mouse-move-vertical" 
+              size={40}
+              style={styles.mediaBtn} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity 
+          onPressIn={()=>volUp(setErr, setVolumeTimer)}
+          onPressOut={()=>clearTimeout(volumeTimer)}
+          >
+            <MaterialCommunityIcons
+              name="volume-plus" 
+              size={40}
+              style={styles.mediaBtn} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity 
+          onPressIn={()=>volDown(setErr, setVolumeTimer)}
+          onPressOut={()=>clearTimeout(volumeTimer)}
+          >
+            <MaterialCommunityIcons
+              name="volume-minus" 
               size={40}
               style={styles.mediaBtn} 
             />

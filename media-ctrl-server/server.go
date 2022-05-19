@@ -19,12 +19,12 @@ var addr = flag.String("addr", "0.0.0.0:9876", "http service address")
 var upgrader = websocket.Upgrader{}
 
 func touchpad(w http.ResponseWriter, r *http.Request) {
-	log.Println("Touch Pad Activated")
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Print("upgrade:", err)
 		return
 	}
+	log.Println("Touch Pad Activated by", r.RemoteAddr)
 
 	defer c.Close()
 	defer log.Println("Touch Pad Deactivated")
@@ -71,7 +71,9 @@ func touchpad(w http.ResponseWriter, r *http.Request) {
 
 			// Get the time of the last touch and if it's close enough to the current time then hold down left click
 			if time.Now().Sub(lastTouchTIme).Milliseconds() < 200 {
-				clickTimer.Stop()
+				if clickTimer != nil {
+					clickTimer.Stop()
+				}
 				robotgo.Toggle("left", "up")
 				robotgo.Toggle("left")
 				holding = true
@@ -189,6 +191,8 @@ func main() {
 	router.HandleFunc("/forward", forward).Methods("GET")
 	router.HandleFunc("/fullscreen", fullScreen).Methods("GET")
 	router.HandleFunc("/shakecursor", shakeCursor).Methods("GET")
+	router.HandleFunc("/volup", volUp).Methods("GET")
+	router.HandleFunc("/voldown", volDown).Methods("GET")
 	router.HandleFunc("/touchpad", touchpad)
 
 	fmt.Println("Server running on port 9876...")
@@ -226,4 +230,14 @@ func shakeCursor(w http.ResponseWriter, r *http.Request) {
 		robotgo.Move(sX/2, (sY/2)+1)
 	}
 	log.Println("Shake Cursor")
+}
+
+func volUp(w http.ResponseWriter, r *http.Request) {
+	robotgo.KeyTap("audio_vol_up")
+	log.Println("Volume Up")
+}
+
+func volDown(w http.ResponseWriter, r *http.Request) {
+	robotgo.KeyTap("audio_vol_down")
+	log.Println("Volume Down")
 }
