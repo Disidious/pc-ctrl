@@ -8,7 +8,7 @@ import { StyleSheet, Dimensions } from 'react-native'
     marginTop: Math.max(Dimensions.get('window').height, Dimensions.get('window').width) * 0.01
   },
   
-  settingsBtn: {
+  optionBtn: {
     backgroundColor: "white",
     margin: 10,
     color: "black", 
@@ -17,6 +17,17 @@ import { StyleSheet, Dimensions } from 'react-native'
     alignSelf: 'flex-end',
     top: 25,
     right: 5,
+  },
+
+  bottomBtn: {
+    backgroundColor: "black",
+    color: "black",  
+    borderTopLeftRadius: 100,
+    borderTopRightRadius: 100,
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: "100%",
   },
 
   ipModal: {

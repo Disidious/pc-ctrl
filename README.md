@@ -1,5 +1,5 @@
 # media-ctrl
-An application which allows you to have some control on your PC through your phone such as pausing a video, open video fullscreen, shakes the cursor to see the duration of the video and most importantly a **touch pad**
+An application which allows you to have some control on your PC through your phone such as pausing a video, open video fullscreen, shakes the cursor to see the duration of the video and most importantly a **touch pad (with a keyboard)**
 
 # How to run the Application
 *   Go to the server directory and run the server using this command below:
@@ -11,11 +11,19 @@ An application which allows you to have some control on your PC through your pho
         expo start
     >Please see [Expo's documentation](https://docs.expo.dev/) for more details on how to run the app.
 
-* On the app click on the top right server icon: <br/><br/>
+* On the app click on the top right server icon: <br/>
 ![Screenshot](./media-ctrl/assets/screenshots/Screenshot_1.png)
 * Type the local IP of the PC that's running the server and click done.
 
+# Main Operations
+* Play/Pause
+* Go backward or forward
+* Enter/Exit Full Screen
+* Shake cursor to see the duration of the video
+* Volume up/down (Button can be held down)
+
 # Touch pad
+![Screenshot](./media-ctrl/assets/screenshots/Screenshot_2.png)
 * To use the touch pad, click on the cursor icon at the top right.
 * The touch pad behaves like a normal laptop touch pad.
 ## Operations
@@ -23,3 +31,4 @@ An application which allows you to have some control on your PC through your pho
 * Right Click
 * Drag and drop
 * Scroll
+* Keyboard

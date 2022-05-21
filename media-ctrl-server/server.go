@@ -178,6 +178,18 @@ func touchpad(w http.ResponseWriter, r *http.Request) {
 
 			touchPrevPos = [2]int{-1, -1}
 			starts -= 1
+
+		case "TYPE":
+			log.Println("Type:", info[1])
+
+			key := info[1]
+			if len(key) > 1 {
+				key = strings.ToLower(key)
+				if len(robotgo.KeyTap(key)) == 0 {
+					continue
+				}
+			}
+			robotgo.TypeStr(key)
 		}
 	}
 }
