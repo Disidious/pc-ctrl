@@ -2,13 +2,17 @@ module github.com/Disidious/media-ctrl
 
 go 1.18
 
+require github.com/pkg/errors v0.9.1
+
 require (
 	github.com/StackExchange/wmi v1.2.1 // indirect
+	github.com/akavel/rsrc v0.10.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-vgo/robotgo v0.100.10 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/lxn/win v0.0.0-20210218163916-a377121e959e // indirect
+	github.com/mdp/qrterminal/v3 v3.0.0 // indirect
 	github.com/otiai10/gosseract v2.2.1+incompatible // indirect
 	github.com/robotn/gohook v0.31.3 // indirect
 	github.com/robotn/xgb v0.0.0-20190912153532-2cb92d044934 // indirect
@@ -22,4 +26,5 @@ require (
 	github.com/vcaesar/tt v0.20.0 // indirect
 	golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // indirect
 	golang.org/x/sys v0.0.0-20211123173158-ef496fb156ab // indirect
+	rsc.io/qr v0.2.0 // indirect
 )

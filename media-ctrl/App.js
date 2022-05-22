@@ -5,71 +5,75 @@ import { Text, View, TouchableOpacity, Image, Modal, TextInput } from 'react-nat
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ScreenOrientation from 'expo-screen-orientation';
-import OperationBtn from './components/OperationBtn.js';
-import OptionBtn from './components/OptionBtn.js';
+import Button from './components/Button.js';
 import TouchPad from './components/TouchPad.js';
 
 const port = ":9876"
 var url = "http://"
 var socketUrl = "ws://"
 
+const errMsgs = {
+  connectionErr: "Couldn't reach host"
+}
 
 function setUrl(ip) {
   url = "http://" + ip + port
   socketUrl = "ws://" + ip + port
 }
 
-function operation(setErr, type, setTimer) {
+function operation(setErr, type, setTimer, timeout=200) {
   setErr('')
   switch (type) {
     case 'PLAYPAUSE':
       fetch(url + "/playpause").catch((e) => {
-        setErr("Couldn't Reach Host")
+        setErr(errMsgs.connectionErr)
       })
       break;
 
     case 'BACKWARD':
       fetch(url + "/backward").catch((e) => {
-        setErr("Couldn't Reach Host")
+        setErr(errMsgs.connectionErr)
       })
+      setTimer(setTimeout(()=>operation(setErr, 'BACKWARD', setTimer, 50), timeout))
       break;
 
     case 'FORWARD':
       fetch(url + "/forward").catch((e) => {
-        setErr("Couldn't Reach Host")
+        setErr(errMsgs.connectionErr)
       })
+      setTimer(setTimeout(()=>operation(setErr, 'FORWARD', setTimer, 50), timeout))
       break;
 
     case 'FULLSCREEN':
       fetch(url + "/fullscreen").catch((e) => {
-        setErr("Couldn't Reach Host")
+        setErr(errMsgs.connectionErr)
       })
       break;
 
     case 'SHAKECURSOR':
       fetch(url + "/shakecursor").catch((e) => {
-        setErr("Couldn't Reach Host")
+        setErr(errMsgs.connectionErr)
       })
       break;
 
     case 'VOLUP':
       setErr('')
       fetch(url + "/volup").catch((e) => {
-        setErr("Couldn't Reach Host")
+        setErr(errMsgs.connectionErr)
       })
-      setTimer(setTimeout(()=>operation(setErr, 'VOLUP', setTimer), 50))
+      setTimer(setTimeout(()=>operation(setErr, 'VOLUP', setTimer, 50), timeout))
       break;
 
     case 'VOLDOWN':
       setErr('')
       fetch(url + "/voldown").catch((e) => {
-        setErr("Couldn't Reach Host")
+        setErr(errMsgs.connectionErr)
       })
-      setTimer(setTimeout(()=>operation(setErr, 'VOLDOWN', setTimer), 50))
+      setTimer(setTimeout(()=>operation(setErr, 'VOLDOWN', setTimer, 50), timeout))
       break;
 
     default:
-      setErr("Couldn't Reach Host")
+      setErr(errMsgs.connectionErr)
       break;
   }
 }
@@ -79,7 +83,7 @@ export default function App() {
   const [inputIp, setInputIp] = useState('')
   const [ip, setIp] = useState('')
   const [touchPadVisible, setTouchPadVisible] = useState(false)
-  const [volumeTimer, setVolumeTimer] = useState(null)
+  const [holdingTimer, setHoldingTimer] = useState(null)
   const [err, setErr] = useState('')
 
   useEffect(() => {
@@ -110,7 +114,7 @@ export default function App() {
   if(touchPadVisible) {
     return (
       <TouchPad
-        setErr={setErr}
+        setErr={()=>setErr(errMsgs.connectionErr)}
         socketUrl={socketUrl}
         setVisible={setTouchPadVisible}
       />
@@ -134,7 +138,7 @@ export default function App() {
       >
         <View style={styles.ipModal}>
           <View style={styles.ipView}>
-            <Text style={{color: "white", fontWeight: "bold"}}>Server IP (Port: 9876)</Text>
+            <Text style={{color: "white", fontWeight: "bold"}}>Server IP</Text>
             <TextInput
               style={styles.ipInput}
               value={String(inputIp)}
@@ -167,16 +171,20 @@ export default function App() {
       ===================================================================================================
       */}
       <View style={styles.upperContainer}>
-        <OptionBtn 
+        <Button 
             iconName="cursor-default-click"
-            optionPress={()=>{
+            iconSize={30}
+            iconStyle={styles.optionBtn}
+            press={()=>{
               setTouchPadVisible(true)
               ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT)
             }}
         />
-        <OptionBtn 
+        <Button 
             iconName="server"
-            optionPress={()=>setModalVisible(true)}
+            iconSize={30}
+            iconStyle={styles.optionBtn}
+            press={()=>setModalVisible(true)}
         />
       </View>
 
@@ -194,41 +202,43 @@ export default function App() {
           Media{"\n"}CTRL
         </Text>
         <View style={styles.mediaBtnContainer}>
-          <OperationBtn 
+          <Button 
             iconName="step-backward"
-            operationPress={()=>operation(setErr, 'BACKWARD')}
+            pressIn={()=>operation(setErr, 'BACKWARD', setHoldingTimer)}
+            pressOut={()=>clearTimeout(holdingTimer)}
           />
-          <OperationBtn 
+          <Button 
             iconName="play-pause"
             iconSize={60}
-            operationPress={()=>operation(setErr, 'PLAYPAUSE')}
+            press={()=>operation(setErr, 'PLAYPAUSE')}
           />
-          <OperationBtn 
+          <Button 
             iconName="step-forward"
-            operationPress={()=>operation(setErr, 'FORWARD')}
+            pressIn={()=>operation(setErr, 'FORWARD', setHoldingTimer)}
+            pressOut={()=>clearTimeout(holdingTimer)}
           />
         </View>
 
         <View style={styles.divider}/>
 
         <View style={styles.mediaBtnContainer}>
-          <OperationBtn 
+          <Button 
             iconName="fit-to-screen"
-            operationPress={()=>operation(setErr, 'FULLSCREEN')}
+            press={()=>operation(setErr, 'FULLSCREEN')}
           />
-          <OperationBtn 
+          <Button 
             iconName="mouse-move-vertical"
-            operationPress={()=>operation(setErr, 'SHAKECURSOR')}
+            press={()=>operation(setErr, 'SHAKECURSOR')}
           />
-          <OperationBtn 
+          <Button 
             iconName="volume-plus"
-            operationPressIn={()=>operation(setErr, 'VOLUP', setVolumeTimer)}
-            operationPressOut={()=>clearTimeout(volumeTimer)}
+            pressIn={()=>operation(setErr, 'VOLUP', setHoldingTimer)}
+            pressOut={()=>clearTimeout(holdingTimer)}
           />
-          <OperationBtn 
+          <Button 
             iconName="volume-minus"
-            operationPressIn={()=>operation(setErr, 'VOLDOWN', setVolumeTimer)}
-            operationPressOut={()=>clearTimeout(volumeTimer)}
+            pressIn={()=>operation(setErr, 'VOLDOWN', setHoldingTimer)}
+            pressOut={()=>clearTimeout(holdingTimer)}
           />
         </View>
         <Text style={{color: "red", fontWeight: "bold", marginTop: 10, fontSize: 20}}>{err}</Text>
