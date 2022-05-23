@@ -18,14 +18,14 @@ function socketConn(url, setErr, goBack) {
     let height = Math.min(Dimensions.get('window').height, Dimensions.get('window').width)
     try {
       socket.send('ACTIVATED;' + width + ';' + height)
-      setErr('')
-    } catch(e) {
       setErr()
+    } catch(e) {
+      setErr(true)
       goBack()
     }
   }
   socket.onerror = function () {
-    setErr()
+    setErr(true)
     goBack()
   }
 }
@@ -79,7 +79,7 @@ export default function TouchPad(props) {
               try {
                 socket.send('START;' + e.nativeEvent.pageX + ';' + e.nativeEvent.pageY + ';' + Date.now());
               } catch(e) {
-                props.setErr()
+                props.setErr(true)
                 touchPadBackAction()
               }
             }}
@@ -95,7 +95,7 @@ export default function TouchPad(props) {
                 try {
                   socket.send('MOVING;' + e.nativeEvent.touches[0].pageX + ';' + e.nativeEvent.touches[0].pageY);
                 } catch(e) {
-                  props.setErr()
+                  props.setErr(true)
                   touchPadBackAction()
                 }
               }
@@ -107,7 +107,7 @@ export default function TouchPad(props) {
               try {
                 socket.send('END;' + e.nativeEvent.pageX + ';' + e.nativeEvent.pageY + ';' + Date.now());
               } catch(e) {
-                props.setErr()
+                props.setErr(true)
                 touchPadBackAction()
               }
             }}

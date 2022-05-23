@@ -114,7 +114,13 @@ export default function App() {
   if(touchPadVisible) {
     return (
       <TouchPad
-        setErr={()=>setErr(errMsgs.connectionErr)}
+        setErr={(err)=>{
+          if(err) {
+            setErr(errMsgs.connectionErr)
+          } else {
+            setErr('')
+          }
+        }}
         socketUrl={socketUrl}
         setVisible={setTouchPadVisible}
       />

@@ -34,7 +34,7 @@ func shakeCursor(w http.ResponseWriter, r *http.Request) {
 	if mY != sY/2 {
 		robotgo.Move(sX/2, sY/2)
 	} else {
-		robotgo.Move(sX/2, (sY/2)+1)
+		robotgo.Move(sX/2, (sY/2)+10)
 	}
 	log.Println("Shake Cursor")
 }
