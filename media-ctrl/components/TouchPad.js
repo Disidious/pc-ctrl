@@ -93,7 +93,7 @@ export default function TouchPad(props) {
                 }
                 lastTouchPadReq = Date.now()
                 try {
-                  //socket.send('MOVING;' + e.nativeEvent.touches[0].pageX + ';' + e.nativeEvent.touches[0].pageY);
+                  socket.send('MOVING;' + e.nativeEvent.touches[0].pageX + ';' + e.nativeEvent.touches[0].pageY);
                 } catch(e) {
                   props.setErr()
                   touchPadBackAction()
