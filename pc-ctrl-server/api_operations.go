@@ -7,6 +7,10 @@ import (
 	"github.com/go-vgo/robotgo"
 )
 
+func ping(w http.ResponseWriter, r *http.Request) {
+	log.Println("PONG!")
+}
+
 func playPause(w http.ResponseWriter, r *http.Request) {
 	robotgo.KeyTap("space")
 	log.Println("Play/Pause")

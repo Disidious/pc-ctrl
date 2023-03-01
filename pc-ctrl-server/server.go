@@ -29,6 +29,7 @@ func main() {
 	router := mux.NewRouter()
 	http.Handle("/", router)
 
+	router.HandleFunc("/ping", ping).Methods("GET")
 	router.HandleFunc("/playpause", playPause).Methods("GET")
 	router.HandleFunc("/backward", backward).Methods("GET")
 	router.HandleFunc("/forward", forward).Methods("GET")

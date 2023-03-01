@@ -1,7 +1,7 @@
 import { Modal, View, Text, TextInput } from 'react-native';
 import { StyleSheet } from 'react-native'
 
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import Button from './Button';
 
 type Props = {
   visible: boolean;
@@ -14,11 +14,14 @@ type Props = {
 const IpModal: React.FC<Props> = (props) => {
   return (
     <Modal
-      animationType="slide"
+      animationType="fade"
       transparent={true}
       visible={props.visible}
       onRequestClose={() => props.setVisibility(false)}
     >
+      <View
+      style={styles.modalShadow}
+      />
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <Text style={styles.inputLabel}>Server IP</Text>
@@ -27,16 +30,13 @@ const IpModal: React.FC<Props> = (props) => {
             value={props.ip}
             onChangeText={(text) => props.setIp(text)}
           />
-          <MaterialCommunityIcons.Button
-            name="check"
-            style={styles.doneIcon}
-            color="black"
+          <Button 
+            btnStyle={styles.doneBtn}
+            iconName={'check'} 
+            iconSize={20}
+            text={'Done'}
             onPress={props.onDone}
-          >
-            <Text style={styles.doneBtnText}>
-              Done
-            </Text>
-          </MaterialCommunityIcons.Button>
+          />
         </View>
       </View>
     </Modal>
@@ -56,6 +56,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  modalShadow: {
+    backgroundColor: "black",
+    opacity: 0.5,
+    height: "100%",
+    width: "100%",
+    position: "absolute"
+  },
   input: {
     width: "90%",
     height: 40,
@@ -70,12 +77,8 @@ const styles = StyleSheet.create({
     color: "white", 
     fontWeight: "bold"
   },
-  doneIcon: {
-    backgroundColor: "white"
-  },
-  doneBtnText: {
-    color: "black", 
-    fontWeight: "bold"
+  doneBtn: {
+    borderRadius: 5
   }
 });
 

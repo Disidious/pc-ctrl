@@ -4,9 +4,11 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
+      "assets/*": ["assets/*"],
       "helpers/*": ["src/helpers/*"],
+      "constants/*": ["src/constants/*"],
       "components": ["src/components/index"],
-      "constants/*": ["src/constants/*"]
+      "screens": ["src/screens/index"]
     }
   }
 }

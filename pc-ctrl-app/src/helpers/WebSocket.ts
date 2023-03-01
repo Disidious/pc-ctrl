@@ -1,22 +1,21 @@
+import AppStates from 'constants/AppStates';
 import { Dimensions } from 'react-native';
-import errorMessages from 'constants/ErrorMessages';
 
-export const socketConnect = (url: string, setError: (err: string) => void, onFail: () => void): WebSocket => {
+export const socketConnect = (url: string, setState: (status: AppStates) => void, onFail: () => void): WebSocket => {
   const socket = new WebSocket(url + '/touchpad');
   socket.onopen = function () {
     const width = Math.max(Dimensions.get('window').height, Dimensions.get('window').width);
     const height = Math.min(Dimensions.get('window').height, Dimensions.get('window').width);
     try {
       socket!.send('ACTIVATED;' + width + ';' + height);
-      setError('');
     } catch(e) {
-      setError(errorMessages.connectionError);
+      setState(AppStates.Unreachable);
       onFail();
     }
   }
 
   socket.onerror = function () {
-    setError(errorMessages.connectionError);
+    setState(AppStates.Unreachable);
     onFail();
   }
 

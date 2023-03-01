@@ -8,14 +8,12 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { Button } from 'components';
 
 import {socketConnect, socketClose} from 'helpers/WebSocket';
-import errorMessages from 'constants/ErrorMessages';
+import { useRef } from "react";
 
-const touchPadDelay = 55
-var lastTouchRequestDate: number;
-var lastKeyPressDate: number = 0;
+import AppStates from "constants/AppStates";
 
 type Props = {
-  setError: (error: string) => void;
+  setState: (state: AppStates) => void;
   setVisibility: (visible: boolean) => void;
   socketUrl: string;
 }
@@ -23,6 +21,10 @@ type Props = {
 const Touchpad: React.FC<Props> = (props) =>  {
   const [touch, setTouch] = useState<{[key:string]: [number, number]}>({});
   const keyboardInputRef = React.createRef<TextInput>();
+  const lastKeyPressDate = useRef(0);
+  const lastTouchRequestDate = useRef<number>();
+
+  const touchPadDelay = 55;
 
   const onBack = () => {
     socketClose(socket);
@@ -37,7 +39,7 @@ const Touchpad: React.FC<Props> = (props) =>  {
     )
   }, []);
 
-  const socket = useMemo(() => socketConnect(props.socketUrl, props.setError, onBack), []);
+  const socket = useMemo(() => socketConnect(props.socketUrl, props.setState, onBack), []);
   
   const setTouchPosition = (touchId: string, x: number, y: number) => {
     let newTouchPos = Object.assign({}, touch);
@@ -57,7 +59,7 @@ const Touchpad: React.FC<Props> = (props) =>  {
     try {
       socket.send('START;' + e.nativeEvent.pageX + ';' + e.nativeEvent.pageY + ';' + Date.now());
     } catch(e) {
-      props.setError(errorMessages.connectionError);
+      props.setState(AppStates.Unreachable);
       onBack();
     }
   }
@@ -65,15 +67,15 @@ const Touchpad: React.FC<Props> = (props) =>  {
   const onTouchMove = (e: GestureResponderEvent) => {
     setTouchPosition(e.nativeEvent.identifier, e.nativeEvent.pageX, e.nativeEvent.pageY);
 
-    if(lastTouchRequestDate && Date.now() - lastTouchRequestDate < touchPadDelay) {
+    if(lastTouchRequestDate.current && Date.now() - lastTouchRequestDate.current < touchPadDelay) {
       return;
     }
-    lastTouchRequestDate = Date.now();
+    lastTouchRequestDate.current = Date.now();
 
     try {
       socket.send('MOVING;' + e.nativeEvent.touches[0].pageX + ';' + e.nativeEvent.touches[0].pageY);
     } catch(e) {
-      props.setError(errorMessages.connectionError);
+      props.setState(AppStates.Unreachable);
       onBack();
     }
   }
@@ -84,7 +86,7 @@ const Touchpad: React.FC<Props> = (props) =>  {
     try {
       socket.send('END;' + e.nativeEvent.pageX + ';' + e.nativeEvent.pageY + ';' + Date.now());
     } catch(e) {
-      props.setError(errorMessages.connectionError);
+      props.setState(AppStates.Unreachable);
       onBack();
     }
   }
@@ -113,10 +115,10 @@ const Touchpad: React.FC<Props> = (props) =>  {
           autoCorrect={false}
           multiline={true}
           onKeyPress={(e)=>{
-            if(e.timeStamp - lastKeyPressDate < 30) {
+            if(e.timeStamp - lastKeyPressDate.current < 30 || e.nativeEvent.key === '12345') {
               return;
             }
-            lastKeyPressDate = e.timeStamp;
+            lastKeyPressDate.current = e.timeStamp;
             if(socket.readyState === WebSocket.OPEN) {
               socket.send('TYPE;' + e.nativeEvent.key);
             }
