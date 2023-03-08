@@ -27,6 +27,7 @@ const IpModal: React.FC<Props> = (props) => {
           <Text style={styles.inputLabel}>Server IP</Text>
           <TextInput
             style={styles.input}
+            keyboardAppearance='dark'
             value={props.ip}
             onChangeText={(text) => props.setIp(text)}
           />

@@ -1,5 +1,5 @@
-import { Text, View, Image, SafeAreaView, StyleSheet, Platform } from 'react-native';
-import React, { useState, useEffect, useRef } from "react";
+import { Text, View, Image, SafeAreaView, StyleSheet, Platform, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { StatusBar } from 'expo-status-bar';
@@ -9,24 +9,58 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { Button, Touchpad, IpModal } from 'components';
 
 import AppStates from 'constants/AppStates';
-import { mediaOperation, ping } from 'helpers/ApiHelper';
-import { ActivityIndicator } from 'react-native';
+import ApiHandler from 'handlers/ApiHandler';
+import MediaOperations from 'constants/MediaOperations';
 
 const Home: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [inputIp, setInputIp] = useState('');
   const [ip, setIp] = useState('');
   const [touchPadVisible, setTouchPadVisible] = useState(false);
-  const [holdingTimer, setHoldingTimer] = useState<NodeJS.Timeout>();
-  const [state, setState] = useState<AppStates>(AppStates.Pinging);
-
-  const fetchAbortController = useRef(new AbortController());
+  const [state, setState] = useState<AppStates>(AppStates.PINGING);
 
   const pingServer = () => {
     fetchAbortController.current.abort();
     fetchAbortController.current = new AbortController();
-    ping(getUrl(), fetchAbortController.current.signal, setState);
+
+    apiHandler.abortSignal = fetchAbortController.current.signal;
+    apiHandler.url = getUrl();
+    apiHandler.ping();
   }
+
+  const getUrl = (isSocket: boolean = false) => {
+    let preFix = "http://";
+    if(isSocket) {
+      preFix = "ws://";
+    }
+    return preFix + ip + ":9876";
+  }
+
+  const onSuccess = () => {
+    if(state !== AppStates.REACHABLE) {
+      setState(AppStates.REACHABLE);
+    }
+  }
+
+  const onFail = () => {
+    setState(AppStates.UNREACHABLE);
+  }
+
+  const onIpInputDone = () => {
+    AsyncStorage.setItem(
+      '@pc_ctrl_ip',
+      inputIp
+    );
+    setIp(inputIp);
+    setModalVisible(false);
+  }
+
+  const onPressOut = () => {
+    apiHandler.unhold();
+  }
+
+  const fetchAbortController = useRef(new AbortController());
+  const apiHandler = useMemo(() => new ApiHandler(getUrl(), fetchAbortController.current.signal, onSuccess, onFail), []);
 
   useEffect(() => {
     (async () => {
@@ -42,32 +76,19 @@ const Home: React.FC = () => {
     })();
   }, [])
 
-  useEffect(() => {
-    pingServer();
-  }, [ip])
+  useEffect( () => {
+    if(!touchPadVisible) {
+      pingServer();
+    }
+  }, [ip, touchPadVisible])
 
   useEffect(()=>{
     if(!touchPadVisible) {
       ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    } else {
+      ScreenOrientation.unlockAsync();
     }
   }, [touchPadVisible])
-
-  const getUrl = (isSocket: boolean = false) => {
-    let preFix = "http://";
-    if(isSocket) {
-      preFix = "ws://";
-    }
-    return preFix + ip + ":9876";
-  }
-
-  const onIpInputDone = () => {
-    AsyncStorage.setItem(
-      '@pc_ctrl_ip',
-      inputIp
-    );
-    setIp(inputIp);
-    setModalVisible(false);
-  }
 
   if(touchPadVisible) {
     return (
@@ -78,7 +99,7 @@ const Home: React.FC = () => {
       />
     );
   }
-
+  
   return (
     <SafeAreaView style={styles.wrapper}>
       <IpModal 
@@ -110,18 +131,18 @@ const Home: React.FC = () => {
         <View style={styles.btnsContainer}>
           <Button 
             iconName="step-backward"
-            onPressIn={() => mediaOperation(getUrl(), fetchAbortController.current.signal, setState, 'BACKWARD', setHoldingTimer)}
-            onPressOut={() => clearTimeout(holdingTimer)}
+            onPressIn={() => apiHandler.mediaOperation(MediaOperations.BACKWARD)}
+            onPressOut={onPressOut}
           />
           <Button 
             iconName="play-pause"
             iconSize={60}
-            onPress={() => mediaOperation(getUrl(), fetchAbortController.current.signal, setState, 'PLAYPAUSE')}
+            onPress={() => apiHandler.mediaOperation(MediaOperations.PLAYPAUSE)}
           />
           <Button 
             iconName="step-forward"
-            onPressIn={()=>mediaOperation(getUrl(), fetchAbortController.current.signal, setState, 'FORWARD', setHoldingTimer)}
-            onPressOut={()=>clearTimeout(holdingTimer)}
+            onPressIn={() => apiHandler.mediaOperation(MediaOperations.FORWARD)}
+            onPressOut={onPressOut}
           />
         </View>
 
@@ -130,21 +151,21 @@ const Home: React.FC = () => {
         <View style={styles.btnsContainer}>
           <Button 
             iconName="fit-to-screen"
-            onPress={()=>mediaOperation(getUrl(), fetchAbortController.current.signal, setState, 'FULLSCREEN')}
+            onPress={() => apiHandler.mediaOperation(MediaOperations.FULLSCREEN)}
           />
           <Button 
             iconName="mouse-move-vertical"
-            onPress={()=>mediaOperation(getUrl(), fetchAbortController.current.signal, setState, 'SHAKECURSOR')}
+            onPress={() => apiHandler.mediaOperation(MediaOperations.SHAKECURSOR)}
           />
           <Button 
             iconName="volume-plus"
-            onPressIn={()=>mediaOperation(getUrl(), fetchAbortController.current.signal, setState, 'VOLUP', setHoldingTimer)}
-            onPressOut={()=>clearTimeout(holdingTimer)}
+            onPressIn={() => apiHandler.mediaOperation(MediaOperations.VOLUP)}
+            onPressOut={onPressOut}
           />
           <Button 
             iconName="volume-minus"
-            onPressIn={()=>mediaOperation(getUrl(), fetchAbortController.current.signal, setState, 'VOLDOWN', setHoldingTimer)}
-            onPressOut={()=>clearTimeout(holdingTimer)}
+            onPressIn={() => apiHandler.mediaOperation(MediaOperations.VOLDOWN)}
+            onPressOut={onPressOut}
           />
         </View>
         
@@ -155,17 +176,16 @@ const Home: React.FC = () => {
             iconSize={30}
             onPress={() => {
               setTouchPadVisible(true);
-              ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
             }}
           />
         </View>
         <View style={styles.serverState}>
           {
-            state === AppStates.Pinging ?
+            state === AppStates.PINGING ?
             <ActivityIndicator size="large" color="white"/> :
             <MaterialCommunityIcons
-              name={state === AppStates.Unreachable ? 'connection' : 'check-circle'}
-              color={state === AppStates.Unreachable ? '#FF3B3B' : "#3BFF70"}
+              name={state === AppStates.UNREACHABLE ? 'connection' : 'check-circle'}
+              color={state === AppStates.UNREACHABLE ? '#FF3B3B' : "#3BFF70"}
               size={40}
             />
           }

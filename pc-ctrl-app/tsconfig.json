@@ -5,7 +5,7 @@
     "baseUrl": ".",
     "paths": {
       "assets/*": ["assets/*"],
-      "helpers/*": ["src/helpers/*"],
+      "handlers/*": ["src/handlers/*"],
       "constants/*": ["src/constants/*"],
       "components": ["src/components/index"],
       "screens": ["src/screens/index"]
